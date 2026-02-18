@@ -36,7 +36,8 @@ const withExpoUnity = (config, options = {}) => {
       settings['ENABLE_BITCODE'] = 'NO';
 
       // Unity headers require C++17.
-      settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17';
+      // Must be quoted — '+' causes CocoaPods' plist parser to fail if unquoted.
+      settings['CLANG_CXX_LANGUAGE_STANDARD'] = '"c++17"';
 
       // Add the Unity framework directory to the search paths so that
       // UnityFramework.framework can be found at build time.
