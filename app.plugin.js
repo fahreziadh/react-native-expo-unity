@@ -1,29 +1,33 @@
-// @ts-check
 const { withXcodeProject } = require('@expo/config-plugins');
+const path = require('path');
+const fs = require('fs');
 
 /**
- * Expo Config Plugin for react-native-expo-unity.
+ * Expo Config Plugin for @dolami-inc/react-native-expo-unity.
  *
- * Automatically injects the Xcode build settings required for
- * Unity as a Library (UaaL) to link and run correctly.
+ * - Injects required Xcode build settings (bitcode, C++17)
+ * - Embeds UnityFramework.framework into the app bundle so it's
+ *   available at runtime (Unity ships as a dynamic framework)
  *
- * @param {import('@expo/config-plugins').ExpoConfig} config
+ * @param {object} config - Expo config
  * @param {{ unityPath?: string }} options
- *   unityPath — path to the Unity iOS build artifacts directory.
- *   Defaults to `$(PROJECT_DIR)/unity/builds/ios`.
+ *   unityPath — absolute path to the Unity iOS build artifacts directory.
+ *   Defaults to `<projectRoot>/unity/builds/ios`.
  *   Can also be set via the EXPO_UNITY_PATH environment variable.
  */
 const withExpoUnity = (config, options = {}) => {
   return withXcodeProject(config, (config) => {
     const xcodeProject = config.modResults;
+    const projectRoot = config.modRequest.projectRoot;
 
+    // Resolve actual filesystem path for the Unity build artifacts.
     const unityPath =
       options.unityPath ||
       process.env.EXPO_UNITY_PATH ||
-      '$(PROJECT_DIR)/unity/builds/ios';
+      path.join(projectRoot, 'unity', 'builds', 'ios');
 
+    // -- Build settings --
     const configurations = xcodeProject.pbxXCBuildConfigurationSection();
-
     for (const key of Object.keys(configurations)) {
       const configuration = configurations[key];
       if (typeof configuration !== 'object' || !configuration.buildSettings) {
@@ -38,46 +42,22 @@ const withExpoUnity = (config, options = {}) => {
       // Unity headers require C++17.
       // Must be quoted — '+' causes CocoaPods' plist parser to fail if unquoted.
       settings['CLANG_CXX_LANGUAGE_STANDARD'] = '"c++17"';
+    }
 
-      // Add the Unity framework directory to the search paths so that
-      // UnityFramework.framework can be found at build time.
-      addFrameworkSearchPath(settings, unityPath);
+    // -- Embed UnityFramework --
+    // UnityFramework is a dynamic framework. It must be embedded (copied) into
+    // the app bundle's Frameworks/ directory, otherwise dyld fails at launch.
+    const frameworkPath = path.join(unityPath, 'UnityFramework.framework');
+    if (fs.existsSync(frameworkPath)) {
+      xcodeProject.addFramework(frameworkPath, {
+        customFramework: true,
+        embed: true,
+        sign: true,
+      });
     }
 
     return config;
   });
 };
-
-/**
- * Appends `unityPath` to FRAMEWORK_SEARCH_PATHS without duplicating it.
- *
- * The xcode npm package stores this setting as either:
- *   - undefined (not set)
- *   - a plain string: `"$(inherited)"`
- *   - a parenthesised list: `("$(inherited)", "/some/path")`
- *
- * @param {Record<string, any>} settings
- * @param {string} unityPath
- */
-function addFrameworkSearchPath(settings, unityPath) {
-  const quoted = `"${unityPath}"`;
-  const existing = settings['FRAMEWORK_SEARCH_PATHS'];
-
-  if (!existing) {
-    settings['FRAMEWORK_SEARCH_PATHS'] = `(${quoted}, "$(inherited)")`;
-    return;
-  }
-
-  const asStr = String(existing);
-
-  // Already present — nothing to do.
-  if (asStr.includes(unityPath)) {
-    return;
-  }
-
-  // Strip surrounding parens if present, then rebuild.
-  const inner = asStr.replace(/^\(|\)$/g, '').trim();
-  settings['FRAMEWORK_SEARCH_PATHS'] = `(${quoted}, ${inner})`;
-}
 
 module.exports = withExpoUnity;

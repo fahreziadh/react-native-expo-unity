@@ -34,9 +34,9 @@ Pod::Spec.new do |s|
   framework_exists = File.exist?(File.join(unity_ios_dir, 'UnityFramework.framework'))
   a_files          = Dir.glob(File.join(unity_ios_dir, '*.a'))
 
-  unity_ldflags  = []
-  unity_ldflags << '-framework UnityFramework' if framework_exists
-  unity_ldflags += a_files.map { |f| "\"#{f}\"" }
+  # Only static libs (.a) here — UnityFramework.framework linking + embedding
+  # is handled by the Expo config plugin (app.plugin.js) via addFramework.
+  unity_ldflags = a_files.map { |f| "\"#{f}\"" }
 
   # Unity framework is ARM-only (device build) — never link it for Simulator.
   # The [sdk=iphoneos*] conditional ensures these settings only apply when
