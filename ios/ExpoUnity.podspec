@@ -42,18 +42,18 @@ Pod::Spec.new do |s|
   # The [sdk=iphoneos*] conditional ensures these settings only apply when
   # building for a physical device, not the Simulator SDK.
   s.pod_target_xcconfig = {
-    'HEADER_SEARCH_PATHS'                        => "\"#{unity_ios_dir}/UnityFramework.framework/Headers\"",
-    'FRAMEWORK_SEARCH_PATHS[sdk=iphoneos*]'      => "\"#{unity_ios_dir}\"",
-    'OTHER_LDFLAGS[sdk=iphoneos*]'               => unity_ldflags.join(' '),
+    'HEADER_SEARCH_PATHS'                        => "$(inherited) \"#{unity_ios_dir}/UnityFramework.framework/Headers\"",
+    'FRAMEWORK_SEARCH_PATHS[sdk=iphoneos*]'      => "$(inherited) \"#{unity_ios_dir}\"",
+    'OTHER_LDFLAGS[sdk=iphoneos*]'               => "$(inherited) #{unity_ldflags.join(' ')}",
     'CLANG_CXX_LANGUAGE_STANDARD'                => 'c++17',
-    'GCC_PREPROCESSOR_DEFINITIONS'               => 'UNITY_FRAMEWORK=1',
+    'GCC_PREPROCESSOR_DEFINITIONS'               => '$(inherited) UNITY_FRAMEWORK=1',
     'ENABLE_BITCODE'                             => 'NO'
   }
 
   s.user_target_xcconfig = {
     'ENABLE_BITCODE'                         => 'NO',
-    'FRAMEWORK_SEARCH_PATHS[sdk=iphoneos*]'  => "\"#{unity_ios_dir}\"",
-    'LIBRARY_SEARCH_PATHS[sdk=iphoneos*]'    => "\"#{unity_ios_dir}\"",
-    'OTHER_LDFLAGS[sdk=iphoneos*]'           => unity_ldflags.join(' ')
+    'FRAMEWORK_SEARCH_PATHS[sdk=iphoneos*]'  => "$(inherited) \"#{unity_ios_dir}\"",
+    'LIBRARY_SEARCH_PATHS[sdk=iphoneos*]'    => "$(inherited) \"#{unity_ios_dir}\"",
+    'OTHER_LDFLAGS[sdk=iphoneos*]'           => "$(inherited) #{unity_ldflags.join(' ')}"
   }
 end
