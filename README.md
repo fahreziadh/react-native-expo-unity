@@ -73,6 +73,10 @@ cp node_modules/@dolami-inc/react-native-expo-unity/plugin/NativeCallProxy.mm <U
 
 ### 2. Unity project — build iOS
 
+> 📹 **Video guide** (click to play):
+>
+> [![Xcode export settings](xcode-settings-thumb.jpg)](xcode-settings.mp4)
+
 1. Unity → File → Build Settings → iOS → Build
 2. Open generated Xcode project
 3. Select `NativeCallProxy.h` in Libraries/Plugins/iOS/
